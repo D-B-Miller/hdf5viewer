@@ -63,7 +63,7 @@ class DataViewer:
         self.master.title("Data Viewer")
         # label for graph
         self.title = StringVar()
-        self.title.set('Displaying {}'.format(dataName))
+        self.title.set(f'Displaying {dataName}')
         self.graph_title = Label(master,textvariable=self.title)
         self.graph_title.pack(side=TOP,pady=10,padx=10)
         # create figure
@@ -88,7 +88,7 @@ class DataViewer:
                 self.axes.contourf(f[dataName][:,:,0])
                 # create index for current depth index
                 self.depth_index = 0
-                self.title.set("Displaying {} [{}]".format(dataName,self.depth_index))
+                self.title.set(f"Displaying {dataName} [{self.depth_index}]")
         # create canvas to render figure
         self.fig_canvas = FigureCanvasTkAgg(self.fig,self.master)
         # update result
@@ -133,7 +133,7 @@ class DataViewer:
             # update canvas
             self.fig_canvas.draw()
             # update title
-            self.title.set("Displaying {} [{}]".format(self.dataName,self.depth_index))
+            self.title.set("Displaying {self.dataName} [{self.depth_index}]")
         
 class HDF5Viewer:
     ''' HD5Viewer
@@ -247,10 +247,16 @@ class HDF5Viewer:
         self.curr_file = filedialog.askopenfilename(initialdir="/",title="Select HDF5 file to inspect",filetypes=[("HDF5 files","*.hdf5")])
         self.name_display.delete(0,END)
         self.name_display.insert(0,self.curr_file)
+        try:
+            with open(self.curr_file,'r') as file:
+                self.status.set("Successfully opened target file")
+        except OSError as err:
+            self.status.set(err)
+            
     # function to explore HDF5 group and update tree
     # if it finds another HDF5 group it calls the functions to explore that group
     def explore_group(self,item,parent):
-        self.status.set("Exploring {}...".format(item.name))
+        self.status.set(f"Exploring {item.name}")
         #print("Exploring {}...".format(item.name))
         # iterate through items
         for v in item.values():
@@ -261,7 +267,7 @@ class HDF5Viewer:
                 self.file_tree['show']='tree headings'
             # if it's a group, call function to investiage it passing last group as parent to add new nodes to
             elif isinstance(v,h5py.Group):
-                pkn = self.file_tree.insert(parent,'end',text=v.name,values=(str(type(v)),"({},)".format(len(v.keys()))),open=True)
+                pkn = self.file_tree.insert(parent,'end',text=v.name,values=(str(type(v)),f"{(len(v.keys()),)}"),open=True)
                 self.explore_group(v,pkn)           
     # explores target hdf5 file and displays the the keys of each entry
     # it the entry is a group, then it calls explore_group to explore further
@@ -278,11 +284,11 @@ class HDF5Viewer:
                         self.file_tree.insert('','end',text=v.name,values=(str(type(v)),str(v.shape),str(v.dtype)),open=True)
                     # if it's a group, call function to investiage it
                     elif isinstance(v,h5py.Group):
-                        pkn = self.file_tree.insert('','end',text=v.name,values=(str(type(v)),"({},)".format(len(v.keys()))),open=True)
+                        pkn = self.file_tree.insert('','end',text=v.name,values=(str(type(v)),f"{(len(v.keys()),)}"),open=True)
                         self.explore_group(v,pkn)
             # update tree display
             self.file_tree['show']='tree headings'
-            self.status.set("Finished scanning .../{}".format(self.curr_file[self.curr_file.rfind('/')+1:]))
+            self.status.set(f"Finished scanning .../{self.curr_file[self.curr_file.rfind('/')+1:]}")
             # finish idle tasks and set minimum window size to final window size
             self.master.update_idletasks()
             self.master.after_idle(lambda: self.master.minsize(self.master.winfo_width(), self.master.winfo_height()))
@@ -294,7 +300,7 @@ class HDF5Viewer:
             iid = self.file_tree.identify('item',event.x,event.y)
             # get the values of the item to check if a dataset or group was selected
             if 'Dataset' in self.file_tree.item(iid,"values")[0]:
-                self.status.set("Creating view for {}".format(self.file_tree.item(iid,"text")))
+                self.status.set(f"Creating view for {self.file_tree.item(iid,'text')}")
                 # create new child window
                 t = Toplevel()
                 # initialize window inside new child window
