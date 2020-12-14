@@ -23,8 +23,6 @@ Assuming you have all the requirements installed, start it using your favourite 
 $ python3 hdf5viewer.py
 ```
 ## Known bugs
-  - Slider index goes out of bounds generating an error message in the console
-  - If the slider is dragged to the extreme and then back again it doesn't update properly.
   
 ## How to Use
 
