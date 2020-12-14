@@ -24,7 +24,7 @@ $ python3 hdf5viewer.py
 ```
 ## Known bugs
   - Slider index goes out of bounds generating an error message in the console
-  - If the slider is dragged to the extreme and then back again it doesn't update properly. This is believed to be a bug in the matplotlib slider.
+  - If the slider is dragged to the extreme and then back again it doesn't update properly.
   
 ## How to Use
 
