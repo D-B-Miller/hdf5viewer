@@ -2,6 +2,8 @@
 
 A Tkinter GUI for quick viewing and inspection of the structure and contents of HDF5 files before opening them as part of a deeper analysis.
 
+The idea is to use this to quickly check that a file can be opened and it is structured as inspected or open an unknwon file and quickly check the contents. This is to act as a quick inspection tool.
+
 ## Requirements
  - tkinter
  - matplotlib
