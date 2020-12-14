@@ -10,8 +10,8 @@ from matplotlib.figure import Figure
 class DataViewer:
     ''' DataViewer
         ======================
-        David Miller, 2019
-        The University of Sheffield 2019
+        David Miller, 2020
+        The University of Sheffield 2020
 
         Wrapper GUI for a Matplotlib Figure showing the data given on creation. Called by HDF5Viewer when the user
         double clicks on a dataset.
@@ -125,21 +125,25 @@ class DataViewer:
             # 0 is left most position and 1 is right most position
             # the data index is calculated as this number times depth and converted to integer
             self.depth_index = int(float(args[1])*self.data_shape[2])
+            # if index exceeds dataset limits
+            # correct it
+            if self.depth_index>=self.data_shape[-1]:
+                self.depth_index = self.data_shape[-1]-1
             # set the scrollbar position to where the user dragged it to
-            self.plot_scroll.set(float(args[1]),self.plot_scroll.get()[1])
+            self.plot_scroll.set(float(args[1]),(self.depth_index+1)/self.data_shape[2])
             # reopen file
             with h5py.File(self.filename,mode='r') as f:
                 self.axes.contourf(f[self.dataName][:,:,self.depth_index])
             # update canvas
             self.fig_canvas.draw()
             # update title
-            self.title.set("Displaying {self.dataName} [{self.depth_index}]")
+            self.title.set(f"Displaying {self.dataName} [{self.depth_index}]")
         
 class HDF5Viewer:
     ''' HD5Viewer
         ======================
-        David Miller, 2019
-        The University of Sheffield 2019
+        David Miller, 2020
+        The University of Sheffield 2020
         
         Presents a graphical means for users to view and inspect the contents of a HDF5 file.
         
