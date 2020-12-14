@@ -1,12 +1,92 @@
-from tkinter import Tk,Entry,Label,StringVar,Button,StringVar,filedialog,Scrollbar,Frame,END,CENTER,W,BOTTOM,TOP,BOTH,Toplevel,X
+from tkinter import Tk,Toplevel,Listbox,Entry,Frame,Label,StringVar,Button,StringVar,filedialog,Scrollbar,Frame,END,CENTER,W,BOTTOM,TOP,BOTH,Toplevel,X
+from tkinter import colorchooser
 from tkinter.ttk import Treeview
 import h5py
 import matplotlib
+from matplotlib.colors import Colormap
 matplotlib.use("TkAgg")
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 from matplotlib.backend_bases import key_press_handler
 from matplotlib.figure import Figure
+import sys
 
+class ColormapChooser:
+    def __init__(self,cmap=None):
+        # create window
+        self.top = Toplevel()
+        # create frame
+        frm = Frame(self.top)
+        # create listbox
+        clist = Listbox(frm)
+        # initialise cmap to default
+        self.curr_map = getattr(matplotlib.cm,matplotlib.rcParams['image.cmap'])
+        # bind double click
+        clist.bind('<Button-1>',self.cmapSelect)
+        # get all colormaps
+        for ci,(kk,_) in enumerate(filter(lambda x : isinstance(x[1],Colormap),vars(matplotlib.cm).items())):
+            clist.insert(ci,kk)
+        # scrollbar
+        scroll = Scrollbar(frm,orient='vertical')
+        scroll.config(command=clist.yview)
+        # currently selected colormap
+        # if nothing is given, get matplotlib default
+        if cmap == None:
+            self.curr_cmap = getattr(matplotlib.cm,matplotlib.rcParams['image.cmap'])
+        else:
+            # if user specifies a string
+            if type(cmap) == str:
+                # attempt to get index of colormap from list
+                # if it fails, reverts to default
+                try:
+                    idx = self.clist.get(0,END).index(cmap)
+                    self.clist.select(idx)
+                    self.curr_cmap = getattr(matplotlib.cm,self.clist.get(0,END)[idx])
+                except ValueError:
+                    self.curr_cmap = getattr(matplotlib.cm,matplotlib.rcParams['image.cmap'])
+            # if the user passs a Colormap directly, store that
+            elif isinstance(cmap,Colormap):
+                self.curr_cmap = cmap
+            # if it's something else
+            # print error message and set current colormap to None
+            else:
+                print(f"Unsupported colormap value {cmap}!",file=sys.stderr)
+                self.curr_cmap = None
+        # add buttons
+        btt_frm = Frame(self.top)
+        select_btt = Button(btt_frm,text="Select",command=self.enter_handler)
+        cancel_btt = Button(btt_frm,text="Cancel",command=self.cancel_handler)
+
+        # keyboard handlers for if the button is currently selected
+        select_btt.bind('<KeyPress-Return>', func=self.enter_handler)
+        cancel_btt.bind('<KeyPress-Return>', func=self.cancel_handler)
+        ## pack
+        clist.grid(row=0,column=0,sticky='nswe')
+        scroll.grid(row=0,column=1,sticky='ns')
+        
+        frm.grid(row=0,column=0,sticky='nswe')
+        
+        select_btt.grid(row=0,column=0,sticky='ew')
+        cancel_btt.grid(row=0,column=1,sticky='ew')
+        
+        btt_frm.grid(row=1,column=0,columnspan=2,sticky='ew')
+    
+    # colormap listbox double click handler
+    # gets colormap matching key and updates selected colormap
+    def cmapSelect(self,event):
+        selection = event.widget.curselection()
+        if len(selection)==0:
+            return
+        self.curr_cmap = getattr(matplotlib.cm,event.widget.get(selection[0]))
+
+    def enter_handler(self):
+        self.returning = self.curr_map
+        self.top.destroy()
+
+    def cancel_handler(self):
+        self.returning = None
+        self.top.destroy()
+        
+        
 class DataViewer:
     ''' DataViewer
         ======================
