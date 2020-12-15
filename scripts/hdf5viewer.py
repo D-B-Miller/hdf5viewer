@@ -156,11 +156,6 @@ class DataViewer:
         menu = Menu(master)
         # options menu
         optsmenu = Menu(menu,tearoff=0)
-        optsmenu.add_command(label="Set colormap",command=self.set_colormap)
-        optsmenu.add_command(label="Set color",command=self.set_color)
-        # add to root menu
-        menu.add_cascade(label="Options",menu=optsmenu)
-        self.master.config(menu=menu)
         # label for graph
         self.title = StringVar()
         self.title.set(f'Displaying {dataName}')
@@ -175,11 +170,14 @@ class DataViewer:
             # if the data is 1D, plot as line
             if len(self.data_shape)==1:
                 self.axes.plot(f[dataName][()],self.curr_lcol)
+                optsmenu.add_command(label="Set color",command=self.set_color)
             # if data is 2D, plot as filled contour
             elif len(self.data_shape)==2:
                 self.axes.contourf(f[dataName][()],cmap=self.curr_cmap)
+                optsmenu.add_command(label="Set colormap",command=self.set_colormap)
             # if data is 3D plot as contourf, but also add a scrollbar for navigation
             elif len(self.data_shape)==3:
+                optsmenu.add_command(label="Set colormap",command=self.set_colormap)
                 # create scroll bar for viewing different slices
                 self.plot_scroll=Scrollbar(master,orient="horizontal",command=self.scroll_data)
                 # add too gui
@@ -189,6 +187,9 @@ class DataViewer:
                 # create index for current depth index
                 self.depth_index = 0
                 self.title.set(f"Displaying {dataName} [{self.depth_index}]")
+        # add to root menu
+        menu.add_cascade(label="Options",menu=optsmenu)
+        self.master.config(menu=menu)
         # create canvas to render figure
         self.fig_canvas = FigureCanvasTkAgg(self.fig,self.master)
         # update result
