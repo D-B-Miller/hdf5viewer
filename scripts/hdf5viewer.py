@@ -9,6 +9,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 from matplotlib.backend_bases import key_press_handler
 from matplotlib.figure import Figure
 import sys
+import os
 
 class ColormapChooser:
     def __init__(self,cmap=None):
@@ -328,7 +329,7 @@ class HDF5Viewer:
     def open_file(self):
         self.status.set("Waiting for user to select file...")
         # open dialog to search for hdf5 file
-        self.curr_file = filedialog.askopenfilename(initialdir="/",title="Select HDF5 file to inspect",filetypes=[("HDF5 files","*.hdf5")])
+        self.curr_file = filedialog.askopenfilename(initialdir=os.path.dirname(self.curr_file),title="Select HDF5 file to inspect",filetypes=[("HDF5 files","*.hdf5")])
         self.name_display.delete(0,END)
         self.name_display.insert(0,self.curr_file)
         try:
