@@ -149,12 +149,15 @@ class DataViewer:
         self.master.title("Data Viewer")
         # current colormap, default
         self.curr_cmap = getattr(matplotlib.cm,matplotlib.rcParams['image.cmap'])
+        # currnt line color
+        self.curr_lcol = matplotlib.rcParams['axes.prop_cycle'].by_key()['color'][0]
         ## menu bar for customisation
         # root menu
         menu = Menu(master)
         # options menu
         optsmenu = Menu(menu,tearoff=0)
         optsmenu.add_command(label="Set colormap",command=self.set_colormap)
+        optsmenu.add_command(label="Set color",command=self.set_color)
         # add to root menu
         menu.add_cascade(label="Options",menu=optsmenu)
         self.master.config(menu=menu)
@@ -171,7 +174,7 @@ class DataViewer:
             self.data_shape = f[dataName].shape
             # if the data is 1D, plot as line
             if len(self.data_shape)==1:
-                self.axes.plot(f[dataName][()])
+                self.axes.plot(f[dataName][()],self.curr_lcol)
             # if data is 2D, plot as filled contour
             elif len(self.data_shape)==2:
                 self.axes.contourf(f[dataName][()],cmap=self.curr_cmap)
@@ -241,7 +244,19 @@ class DataViewer:
         ch = ColormapChooser(self.master).show()
         if ch:
             self.curr_cmap = ch
-        self.scroll_data("moveto",str(self.plot_scroll.get()[0]))
+            self.scroll_data("moveto",str(self.plot_scroll.get()[0]))
+
+    def update_line(self):
+        with h5py.File(self.filename,mode='r') as f:
+            self.axes.plot(f[self.dataName][()],self.curr_lcol)
+        # update canvas
+        self.fig_canvas.draw()
+
+    def set_color(self):
+        col = colorchooser.askcolor()
+        if col[1]:
+            self.curr_lcol = col[1]
+            self.update_line()
         
 class HDF5Viewer:
     ''' HD5Viewer
