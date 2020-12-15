@@ -1,4 +1,4 @@
-from tkinter import Tk,Toplevel,Listbox,Entry,Frame,Label,StringVar,Button,StringVar,filedialog,Scrollbar,Frame,END,CENTER,W,BOTTOM,TOP,BOTH,Toplevel,X
+from tkinter import Tk,Toplevel,Listbox,Entry,Frame,Label,StringVar,Button,StringVar,filedialog,Scrollbar,Frame,END,CENTER,W,BOTTOM,TOP,BOTH,Toplevel,X,Menu
 from tkinter import colorchooser
 from tkinter.ttk import Treeview
 import h5py
@@ -11,24 +11,23 @@ from matplotlib.figure import Figure
 import sys
 import os
 
-class ColormapChooser:
-    def __init__(self,cmap=None):
-        # create window
-        self.top = Toplevel()
+class ColormapChooser(Toplevel):
+    def __init__(self,master,cmap=None):
+        Toplevel.__init__(self,master)
+        # update title
+        self.title("Choose a colormap")
         # create frame
-        frm = Frame(self.top)
+        frm = Frame(self)
         # create listbox
-        clist = Listbox(frm)
-        # initialise cmap to default
-        self.curr_map = getattr(matplotlib.cm,matplotlib.rcParams['image.cmap'])
+        self.clist = Listbox(frm)
         # bind double click
-        clist.bind('<Button-1>',self.cmapSelect)
+        self.clist.bind('<Button-1>',self.cmapSelect)
         # get all colormaps
         for ci,(kk,_) in enumerate(filter(lambda x : isinstance(x[1],Colormap),vars(matplotlib.cm).items())):
-            clist.insert(ci,kk)
+            self.clist.insert(ci,kk)
         # scrollbar
         scroll = Scrollbar(frm,orient='vertical')
-        scroll.config(command=clist.yview)
+        scroll.config(command=self.clist.yview)
         # currently selected colormap
         # if nothing is given, get matplotlib default
         if cmap == None:
@@ -39,9 +38,9 @@ class ColormapChooser:
                 # attempt to get index of colormap from list
                 # if it fails, reverts to default
                 try:
-                    idx = self.clist.get(0,END).index(cmap)
-                    self.clist.select(idx)
-                    self.curr_cmap = getattr(matplotlib.cm,self.clist.get(0,END)[idx])
+                    idx = self.self.clist.get(0,END).index(cmap)
+                    self.self.clist.select(idx)
+                    self.curr_cmap = getattr(matplotlib.cm,self.self.clist.get(0,END)[idx])
                 except ValueError:
                     self.curr_cmap = getattr(matplotlib.cm,matplotlib.rcParams['image.cmap'])
             # if the user passs a Colormap directly, store that
@@ -53,7 +52,7 @@ class ColormapChooser:
                 print(f"Unsupported colormap value {cmap}!",file=sys.stderr)
                 self.curr_cmap = None
         # add buttons
-        btt_frm = Frame(self.top)
+        btt_frm = Frame(self)
         select_btt = Button(btt_frm,text="Select",command=self.enter_handler)
         cancel_btt = Button(btt_frm,text="Cancel",command=self.cancel_handler)
 
@@ -61,7 +60,7 @@ class ColormapChooser:
         select_btt.bind('<KeyPress-Return>', func=self.enter_handler)
         cancel_btt.bind('<KeyPress-Return>', func=self.cancel_handler)
         ## pack
-        clist.grid(row=0,column=0,sticky='nswe')
+        self.clist.grid(row=0,column=0,sticky='nswe')
         scroll.grid(row=0,column=1,sticky='ns')
         
         frm.grid(row=0,column=0,sticky='nswe')
@@ -70,23 +69,29 @@ class ColormapChooser:
         cancel_btt.grid(row=0,column=1,sticky='ew')
         
         btt_frm.grid(row=1,column=0,columnspan=2,sticky='ew')
-    
     # colormap listbox double click handler
     # gets colormap matching key and updates selected colormap
     def cmapSelect(self,event):
         selection = event.widget.curselection()
         if len(selection)==0:
             return
+        print(event.widget.get(selection[0]))
         self.curr_cmap = getattr(matplotlib.cm,event.widget.get(selection[0]))
 
     def enter_handler(self):
-        self.returning = self.curr_map
-        self.top.destroy()
+        selection = self.clist.curselection()
+        self.curr_cmap = self.clist.get(selection[0])
+        self.destroy()
 
     def cancel_handler(self):
-        self.returning = None
-        self.top.destroy()
-        
+        self.curr_cmap = None
+        self.destroy()
+
+    def show(self):
+        self.wm_deiconify()
+        self.clist.focus_force()
+        self.wait_window()
+        return self.curr_cmap
         
 class DataViewer:
     ''' DataViewer
@@ -142,6 +147,17 @@ class DataViewer:
         self.filename = filename
         # set title
         self.master.title("Data Viewer")
+        # current colormap, default
+        self.curr_cmap = getattr(matplotlib.cm,matplotlib.rcParams['image.cmap'])
+        ## menu bar for customisation
+        # root menu
+        menu = Menu(master)
+        # options menu
+        optsmenu = Menu(menu,tearoff=0)
+        optsmenu.add_command(label="Set colormap",command=self.set_colormap)
+        # add to root menu
+        menu.add_cascade(label="Options",menu=optsmenu)
+        self.master.config(menu=menu)
         # label for graph
         self.title = StringVar()
         self.title.set(f'Displaying {dataName}')
@@ -158,7 +174,7 @@ class DataViewer:
                 self.axes.plot(f[dataName][()])
             # if data is 2D, plot as filled contour
             elif len(self.data_shape)==2:
-                self.axes.contourf(f[dataName][()])
+                self.axes.contourf(f[dataName][()],cmap=self.curr_cmap)
             # if data is 3D plot as contourf, but also add a scrollbar for navigation
             elif len(self.data_shape)==3:
                 # create scroll bar for viewing different slices
@@ -166,7 +182,7 @@ class DataViewer:
                 # add too gui
                 self.plot_scroll.pack(side=TOP,fill=BOTH,expand=True)
                 # plot first slice of data
-                self.axes.contourf(f[dataName][:,:,0])
+                self.axes.contourf(f[dataName][:,:,0],cmap=self.curr_cmap)
                 # create index for current depth index
                 self.depth_index = 0
                 self.title.set(f"Displaying {dataName} [{self.depth_index}]")
@@ -200,6 +216,7 @@ class DataViewer:
 
     # handler for using the scrollbar to view slices of data
     def scroll_data(self,*args):
+        #print(args)
         # if the user has dragged the scrollbar
         if args[0] == "moveto":
             # args is only one element in this case and is a number between 0 and 1
@@ -214,11 +231,17 @@ class DataViewer:
             self.plot_scroll.set(float(args[1]),(self.depth_index+1)/self.data_shape[2])
             # reopen file
             with h5py.File(self.filename,mode='r') as f:
-                self.axes.contourf(f[self.dataName][:,:,self.depth_index])
+                self.axes.contourf(f[self.dataName][:,:,self.depth_index],cmap=self.curr_cmap)
             # update canvas
             self.fig_canvas.draw()
             # update title
             self.title.set(f"Displaying {self.dataName} [{self.depth_index}]")
+
+    def set_colormap(self):
+        ch = ColormapChooser(self.master).show()
+        if ch:
+            self.curr_cmap = ch
+        self.scroll_data("moveto",str(self.plot_scroll.get()[0]))
         
 class HDF5Viewer:
     ''' HD5Viewer
