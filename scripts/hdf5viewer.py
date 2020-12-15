@@ -247,6 +247,8 @@ class DataViewer:
             self.scroll_data("moveto",str(self.plot_scroll.get()[0]))
 
     def update_line(self):
+        # remove first line from plot
+        self.axes.lines.pop(0)
         with h5py.File(self.filename,mode='r') as f:
             self.axes.plot(f[self.dataName][()],self.curr_lcol)
         # update canvas
